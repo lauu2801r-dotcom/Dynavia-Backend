@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  ms-emergency:
+    build: ./ms-emergency
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - DATABASE_URL=${DATABASE_URL}
+      - MAPBOX_TOKEN=${MAPBOX_TOKEN_EMERGENCY}
+    restart: always
+
+  ms-geolocation:
+    build: ./ms-geolocation
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - DATABASE_URL=${DATABASE_URL}
+      - MAPBOX_TOKEN=${MAPBOX_TOKEN_GEO}
+    restart: always
+
+  ms-notifications:
+    build: ./ms-notifications
+    ports:
+      - "3003:3003"
+    environment:
+      - PORT=3003
+      - DATABASE_URL=${DATABASE_URL}
+    restart: always
+
+  ms-metrics:
+    build: ./ms-metrics
+    ports:
+      - "3004:3004"
+    environment:
+      - PORT=3004
+      - DATABASE_URL=${DATABASE_URL}
+    restart: always
+
+  ms-traffic:
+    build: ./ms-traffic
+    ports:
+      - "3005:3005"
+    environment:
+      - PORT=3005
+      - DATABASE_URL=${DATABASE_URL}
+    restart: always
