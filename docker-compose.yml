@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   ms-emergency:
     build: ./ms-emergency
@@ -8,8 +10,6 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - MAPBOX_TOKEN=${MAPBOX_TOKEN_EMERGENCY}
       - METRICS_URL=http://ms-metrics:3004
-      - TRAFFIC_URL=http://ms-traffic:3005
-      - NOTIFICATIONS_URL=http://ms-notifications:3003
     restart: always
 
   ms-geolocation:
@@ -61,26 +61,4 @@ services:
       - ./mosquitto/config:/mosquitto/config
       - ./mosquitto/data:/mosquitto/data
       - ./mosquitto/log:/mosquitto/log
-    restart: always
-
-  dashboard:
-    image: nginx:alpine
-    ports:
-      - "8888:80"
-    volumes:
-      - ./dashboard.html:/usr/share/nginx/html/index.html:ro
-    restart: always
-
-  emqx:
-    image: emqx:5
-    ports:
-      - "1883:1883"
-      - "8083:8083"
-      - "18083:18083"
-    environment:
-      - EMQX_MQTT__ALLOW_ANONYMOUS=true
-      - EMQX_DASHBOARD__DEFAULT_PASSWORD=public
-      - EMQX_AUTH__MNESIA__PASSWORD_HASH=plain
-      - EMQX_ALLOW_ANONYMOUS=true
-      - EMQX_ACL_NOMATCH=allow
     restart: always
