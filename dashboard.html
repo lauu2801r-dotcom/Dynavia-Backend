@@ -3,697 +3,205 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dynavia — Monitor IoT Semáforos</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.3.7/mqtt.min.js"></script>
+<title>Dynavia — Dashboard IoT Semáforos</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;500;700&display=swap');
-
-  :root {
-    --bg: #060a0f;
-    --surface: #0d1520;
-    --border: #1a2a3a;
-    --primary: #00d4ff;
-    --green: #00ff88;
-    --yellow: #ffcc00;
-    --red: #ff3355;
-    --white-light: #ffffff;
-    --text: #c8e0f0;
-    --muted: #4a6a7a;
-  }
-
   * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Rajdhani', sans-serif;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  /* Grid background */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .container {
-    position: relative;
-    z-index: 1;
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 30px 24px;
-  }
-
-  /* Header */
-  header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 40px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .logo {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
-
-  .logo-icon {
-    width: 44px;
-    height: 44px;
-    background: linear-gradient(135deg, var(--primary), #0066ff);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 22px;
-    box-shadow: 0 0 20px rgba(0,212,255,0.3);
-  }
-
-  .logo-text {
-    font-size: 26px;
-    font-weight: 700;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: #fff;
-  }
-
-  .logo-sub {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 11px;
-    color: var(--primary);
-    letter-spacing: 2px;
-  }
-
-  .status-bar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 12px;
-  }
-
-  .dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: var(--muted);
-    transition: all 0.3s;
-  }
-
-  .dot.connected {
-    background: var(--green);
-    box-shadow: 0 0 10px var(--green);
-    animation: pulse-dot 2s infinite;
-  }
-
-  .dot.error { background: var(--red); box-shadow: 0 0 10px var(--red); }
-
-  @keyframes pulse-dot {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
-  }
-
-  /* Main grid */
-  .main-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 24px;
-    margin-bottom: 24px;
-  }
-
-  /* Semaphore card */
-  .semaphore-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 32px 24px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
-    position: relative;
-    overflow: hidden;
-    transition: border-color 0.5s;
-  }
-
-  .semaphore-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, var(--primary), transparent);
-    opacity: 0.5;
-  }
-
-  .semaphore-card.emergency {
-    border-color: rgba(255,255,255,0.4);
-    box-shadow: 0 0 40px rgba(255,255,255,0.08);
-  }
-
-  .semaphore-label {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 3px;
-    color: var(--primary);
-    text-transform: uppercase;
-  }
-
-  .semaphore-id {
-    font-size: 20px;
-    font-weight: 700;
-    letter-spacing: 2px;
-    color: #fff;
-  }
-
-  /* Traffic light */
-  .traffic-light {
-    background: #0a1520;
-    border: 2px solid #1a2a3a;
-    border-radius: 16px;
-    padding: 16px 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    width: 80px;
-    align-items: center;
-    box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
-  }
-
-  .light {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: #0a1520;
-    border: 2px solid #1a2a3a;
-    transition: all 0.4s ease;
-    position: relative;
-  }
-
-  .light.red.on {
-    background: var(--red);
-    border-color: var(--red);
-    box-shadow: 0 0 20px var(--red), 0 0 40px rgba(255,51,85,0.4);
-  }
-
-  .light.yellow.on {
-    background: var(--yellow);
-    border-color: var(--yellow);
-    box-shadow: 0 0 20px var(--yellow), 0 0 40px rgba(255,204,0,0.4);
-  }
-
-  .light.green.on {
-    background: var(--green);
-    border-color: var(--green);
-    box-shadow: 0 0 20px var(--green), 0 0 40px rgba(0,255,136,0.4);
-  }
-
-  .light.white.on {
-    background: var(--white-light);
-    border-color: var(--white-light);
-    box-shadow: 0 0 30px var(--white-light), 0 0 60px rgba(255,255,255,0.5);
-    animation: white-pulse 1s infinite;
-  }
-
-  @keyframes white-pulse {
-    0%, 100% { box-shadow: 0 0 30px #fff, 0 0 60px rgba(255,255,255,0.5); }
-    50% { box-shadow: 0 0 50px #fff, 0 0 100px rgba(255,255,255,0.7); }
-  }
-
-  .semaphore-status {
-    font-size: 15px;
-    font-weight: 700;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--muted);
-    transition: color 0.4s;
-  }
-
-  .semaphore-status.white { color: #fff; text-shadow: 0 0 10px #fff; }
-  .semaphore-status.normal { color: var(--green); }
-
-  .semaphore-meta {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 10px;
-    color: var(--muted);
-    text-align: center;
-    line-height: 1.6;
-  }
-
-  /* Right panel */
-  .right-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-
-  /* Stats */
-  .stats-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-  }
-
-  .stat-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 18px 16px;
-  }
-
-  .stat-label {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 2px;
-    color: var(--muted);
-    text-transform: uppercase;
-    margin-bottom: 8px;
-  }
-
-  .stat-value {
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--primary);
-    line-height: 1;
-  }
-
-  .stat-unit {
-    font-size: 11px;
-    color: var(--muted);
-    margin-top: 4px;
-  }
-
-  /* Log */
-  .log-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 18px;
-    flex: 1;
-  }
-
-  .log-title {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 3px;
-    color: var(--primary);
-    text-transform: uppercase;
-    margin-bottom: 14px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .log-list {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    max-height: 180px;
-    overflow-y: auto;
-  }
-
-  .log-list::-webkit-scrollbar { width: 3px; }
-  .log-list::-webkit-scrollbar-track { background: transparent; }
-  .log-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-  .log-item {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 11px;
-    color: var(--muted);
-    display: flex;
-    gap: 10px;
-    align-items: flex-start;
-    animation: fadeIn 0.3s ease;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-4px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .log-time { color: var(--border); min-width: 55px; }
-  .log-item.white .log-msg { color: #fff; }
-  .log-item.normal .log-msg { color: var(--green); }
-  .log-item.connected .log-msg { color: var(--primary); }
-
-  /* Bottom bar */
-  .bottom-bar {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 16px 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px;
-  }
-
-  .broker-info {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 11px;
-    color: var(--muted);
-  }
-
-  .broker-info span { color: var(--primary); }
-
-  .topic-badges {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-
-  .badge {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 10px;
-    padding: 4px 10px;
-    border-radius: 6px;
-    border: 1px solid var(--border);
-    color: var(--primary);
-    letter-spacing: 1px;
-  }
-
-  /* Config panel */
-  .config-panel {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 18px 24px;
-    margin-bottom: 24px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    flex-wrap: wrap;
-  }
-
-  .config-label {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 2px;
-    color: var(--muted);
-    text-transform: uppercase;
-    white-space: nowrap;
-  }
-
-  .config-input {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 8px 12px;
-    color: var(--text);
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 12px;
-    width: 200px;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-
-  .config-input:focus { border-color: var(--primary); }
-
-  .config-btn {
-    background: linear-gradient(135deg, var(--primary), #0066ff);
-    border: none;
-    border-radius: 8px;
-    padding: 8px 20px;
-    color: #fff;
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: opacity 0.2s;
-  }
-
-  .config-btn:hover { opacity: 0.85; }
-
-  /* Emergency overlay */
-  .emergency-banner {
-    display: none;
-    background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
-    border: 1px solid rgba(255,255,255,0.3);
-    border-radius: 14px;
-    padding: 16px 24px;
-    margin-bottom: 24px;
-    text-align: center;
-    animation: banner-pulse 1s infinite;
-  }
-
-  .emergency-banner.active { display: block; }
-
-  @keyframes banner-pulse {
-    0%, 100% { border-color: rgba(255,255,255,0.3); }
-    50% { border-color: rgba(255,255,255,0.8); box-shadow: 0 0 30px rgba(255,255,255,0.1); }
-  }
-
-  .emergency-banner-text {
-    font-size: 18px;
-    font-weight: 700;
-    letter-spacing: 4px;
-    color: #fff;
-    text-transform: uppercase;
-  }
-
-  .emergency-banner-sub {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 11px;
-    color: rgba(255,255,255,0.6);
-    margin-top: 4px;
-    letter-spacing: 2px;
-  }
+  body { background: #0a0a0f; color: #fff; font-family: 'Segoe UI', sans-serif; min-height: 100vh; }
+  .header { background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 20px 40px; display: flex; align-items: center; gap: 16px; border-bottom: 1px solid #ffffff15; }
+  .logo { font-size: 24px; font-weight: 800; background: linear-gradient(90deg, #00d4ff, #0099ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .status-dot { width: 10px; height: 10px; border-radius: 50%; background: #00ff88; box-shadow: 0 0 8px #00ff88; animation: pulse 2s infinite; margin-left: auto; }
+  .status-dot.offline { background: #ff4444; box-shadow: 0 0 8px #ff4444; animation: none; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .main { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 32px 40px; max-width: 1200px; margin: 0 auto; }
+  .card { background: #12122a; border-radius: 20px; padding: 28px; border: 1px solid #ffffff10; }
+  .card-title { font-size: 12px; text-transform: uppercase; letter-spacing: 2px; color: #888; margin-bottom: 20px; }
+  .semaphore-container { display: flex; justify-content: center; gap: 40px; margin: 20px 0; }
+  .semaphore { background: #1a1a1a; border-radius: 16px; padding: 20px 16px; display: flex; flex-direction: column; gap: 14px; align-items: center; border: 2px solid #333; width: 80px; }
+  .semaphore-id { font-size: 10px; color: #666; margin-top: 4px; }
+  .light { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #333; transition: all 0.5s ease; }
+  .light.red { background: #1a0000; }
+  .light.red.on { background: #ff2200; box-shadow: 0 0 20px #ff2200, 0 0 40px #ff220055; border-color: #ff2200; }
+  .light.yellow { background: #1a1400; }
+  .light.yellow.on { background: #ffcc00; box-shadow: 0 0 20px #ffcc00, 0 0 40px #ffcc0055; border-color: #ffcc00; }
+  .light.green { background: #001a00; }
+  .light.green.on { background: #00ff44; box-shadow: 0 0 20px #00ff44, 0 0 40px #00ff4455; border-color: #00ff44; }
+  .light.white { background: #0a0a0a; }
+  .light.white.on { background: #ffffff; box-shadow: 0 0 20px #ffffff, 0 0 40px #ffffff88; border-color: #ffffff; }
+  .banner { padding: 16px 24px; border-radius: 12px; text-align: center; margin-top: 16px; font-weight: 700; font-size: 14px; transition: all 0.5s; }
+  .banner.emergency { background: linear-gradient(135deg, #ff220022, #ff220044); border: 1px solid #ff2200; color: #ff6644; }
+  .banner.normal { background: linear-gradient(135deg, #00ff4422, #00ff4444); border: 1px solid #00ff44; color: #00ff44; }
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .stat { background: #0a0a1a; border-radius: 12px; padding: 16px; text-align: center; border: 1px solid #ffffff08; }
+  .stat-value { font-size: 32px; font-weight: 800; color: #00d4ff; }
+  .stat-label { font-size: 11px; color: #666; margin-top: 4px; }
+  .events-list { max-height: 320px; overflow-y: auto; }
+  .event-item { padding: 12px 16px; border-radius: 10px; margin-bottom: 8px; border-left: 3px solid; background: #0a0a1a; }
+  .event-item.active { border-color: #ff2200; }
+  .event-item.completed { border-color: #00ff44; }
+  .event-row { display: flex; justify-content: space-between; align-items: center; }
+  .event-id { font-size: 11px; color: #aaa; font-family: monospace; }
+  .event-badge { font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 700; }
+  .badge-active { background: #ff220022; color: #ff6644; border: 1px solid #ff2200; }
+  .badge-completed { background: #00ff4422; color: #00ff44; border: 1px solid #00ff44; }
+  .event-meta { font-size: 11px; color: #666; margin-top: 4px; }
+  .col-span { grid-column: span 2; }
+  .level-badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+  .level-1 { background: #ff220022; color: #ff6644; border: 1px solid #ff2200; }
+  .level-2 { background: #ffaa0022; color: #ffcc44; border: 1px solid #ffaa00; }
+  .level-3 { background: #0088ff22; color: #44aaff; border: 1px solid #0088ff; }
 </style>
 </head>
 <body>
-<div class="container">
+<div class="header">
+  <div class="logo">⚡ DYNAVIA</div>
+  <span style="color:#666;font-size:13px">Dashboard IoT — Semáforos en tiempo real</span>
+  <div class="status-dot" id="statusDot"></div>
+  <span id="statusText" style="font-size:12px;color:#00ff88;margin-left:8px">Conectado</span>
+</div>
 
-  <header>
-    <div class="logo">
-      <div class="logo-icon">🚑</div>
-      <div>
-        <div class="logo-text">Dynavia</div>
-        <div class="logo-sub">IoT Semaphore Monitor</div>
-      </div>
+<div class="main">
+  <!-- Semáforos -->
+  <div class="card">
+    <div class="card-title">🚦 Estado Semáforos</div>
+    <div class="semaphore-container" id="semaphoreContainer">
+      <!-- generado por JS -->
     </div>
-    <div class="status-bar">
-      <div class="dot" id="dot"></div>
-      <span id="conn-label" style="font-family:'Share Tech Mono',monospace;font-size:12px;">Desconectado</span>
-    </div>
-  </header>
-
-  <!-- Config -->
-  <div class="config-panel">
-    <span class="config-label">Broker IP</span>
-    <input class="config-input" id="broker-ip" type="text" value="186.146.84.78" placeholder="IP del servidor Ubuntu"/>
-    <button class="config-btn" onclick="connectMQTT()">Conectar</button>
-    <span class="config-label" style="margin-left:auto;">Topic: <span style="color:var(--primary)">dynavia/semaphore/#</span></span>
+    <div class="banner normal" id="emergencyBanner">✅ Ciclo Normal — Sin emergencias activas</div>
   </div>
 
-  <!-- Emergency banner -->
-  <div class="emergency-banner" id="emergency-banner">
-    <div class="emergency-banner-text">⚠ Emergencia Activa — Luz Blanca Preventiva</div>
-    <div class="emergency-banner-sub" id="banner-event">Evento: —</div>
-  </div>
-
-  <!-- Main -->
-  <div class="main-grid">
-
-    <!-- Semaphore -->
-    <div class="semaphore-card" id="sem-card">
-      <div class="semaphore-label">Semáforo IoT</div>
-      <div class="semaphore-id" id="sem-id">SEM-001</div>
-      <div class="traffic-light">
-        <div class="light red" id="light-red"></div>
-        <div class="light yellow" id="light-yellow"></div>
-        <div class="light green on" id="light-green"></div>
-        <div class="light white" id="light-white"></div>
-      </div>
-      <div class="semaphore-status normal" id="sem-status">Normal</div>
-      <div class="semaphore-meta" id="sem-meta">
-        Ciclo normal activo<br>Esperando señal MQTT...
-      </div>
-    </div>
-
-    <!-- Right panel -->
-    <div class="right-panel">
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-label">Activaciones</div>
-          <div class="stat-value" id="count-white">0</div>
-          <div class="stat-unit">luz blanca</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Restauraciones</div>
-          <div class="stat-value" id="count-normal">0</div>
-          <div class="stat-unit">ciclo normal</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Mensajes MQTT</div>
-          <div class="stat-value" id="count-msgs">0</div>
-          <div class="stat-unit">recibidos</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Último evento</div>
-          <div class="stat-value" id="last-level" style="font-size:20px;color:#fff">—</div>
-          <div class="stat-unit">nivel emergencia</div>
-        </div>
-      </div>
-
-      <div class="log-card">
-        <div class="log-title">
-          <span style="color:var(--green)">●</span> Log MQTT en tiempo real
-        </div>
-        <ul class="log-list" id="log-list">
-          <li class="log-item">
-            <span class="log-time">--:--:--</span>
-            <span class="log-msg">Esperando conexión...</span>
-          </li>
-        </ul>
-      </div>
+  <!-- Stats -->
+  <div class="card">
+    <div class="card-title">📊 Métricas del Sistema</div>
+    <div class="stats-grid">
+      <div class="stat"><div class="stat-value" id="statTotal">0</div><div class="stat-label">Total Eventos</div></div>
+      <div class="stat"><div class="stat-value" id="statActive" style="color:#ff6644">0</div><div class="stat-label">Activos Ahora</div></div>
+      <div class="stat"><div class="stat-value" id="statCompleted" style="color:#00ff44">0</div><div class="stat-label">Completados</div></div>
+      <div class="stat"><div class="stat-value" id="statAvgDur" style="color:#ffcc00">0s</div><div class="stat-label">Duración Promedio</div></div>
     </div>
   </div>
 
-  <!-- Bottom -->
-  <div class="bottom-bar">
-    <div class="broker-info">
-      Broker: <span id="broker-label">—</span> &nbsp;|&nbsp;
-      Puerto WebSocket: <span>9001</span> &nbsp;|&nbsp;
-      Protocolo: <span>MQTT over WS</span>
-    </div>
-    <div class="topic-badges">
-      <div class="badge">dynavia/semaphore/all</div>
-      <div class="badge">dynavia/semaphore/SEM-001</div>
+  <!-- Historial -->
+  <div class="card col-span">
+    <div class="card-title">📋 Eventos Recientes — Base de Datos NeonDB</div>
+    <div class="events-list" id="eventsList">
+      <div style="color:#666;text-align:center;padding:40px">Cargando eventos...</div>
     </div>
   </div>
-
 </div>
 
 <script>
-  let client = null;
-  let countWhite = 0;
-  let countNormal = 0;
-  let countMsgs = 0;
+const BACKEND = 'http://192.168.56.101:3004';
+const SEMAPHORES = ['SEM-001', 'SEM-002', 'SEM-003'];
+let semaphoreState = {}; // 'normal' | 'emergency'
+const POLL_INTERVAL = 2000;
 
-  function now() {
-    const d = new Date();
-    return [d.getHours(), d.getMinutes(), d.getSeconds()]
-      .map(n => String(n).padStart(2,'0')).join(':');
+// Construir semáforos
+function buildSemaphores() {
+  const container = document.getElementById('semaphoreContainer');
+  container.innerHTML = SEMAPHORES.map(id => `
+    <div style="text-align:center">
+      <div class="semaphore" id="sem-${id}">
+        <div class="light red" id="${id}-red"></div>
+        <div class="light yellow" id="${id}-yellow"></div>
+        <div class="light green on" id="${id}-green"></div>
+        <div class="light white" id="${id}-white"></div>
+      </div>
+      <div class="semaphore-id">${id}</div>
+    </div>
+  `).join('');
+  SEMAPHORES.forEach(id => semaphoreState[id] = 'normal');
+}
+
+function setSemaphore(id, mode) {
+  const lights = ['red','yellow','green','white'];
+  lights.forEach(l => document.getElementById(`${id}-${l}`)?.classList.remove('on'));
+  if (mode === 'emergency') {
+    document.getElementById(`${id}-white`)?.classList.add('on');
+  } else {
+    document.getElementById(`${id}-green`)?.classList.add('on');
   }
+}
 
-  function addLog(msg, type='') {
-    const list = document.getElementById('log-list');
-    const li = document.createElement('li');
-    li.className = `log-item ${type}`;
-    li.innerHTML = `<span class="log-time">${now()}</span><span class="log-msg">${msg}</span>`;
-    list.insertBefore(li, list.firstChild);
-    if (list.children.length > 30) list.removeChild(list.lastChild);
-  }
+function formatDuration(s) {
+  if (!s) return '--';
+  const m = Math.floor(s/60), sec = s%60;
+  return `${m}m ${sec}s`;
+}
 
-  function setConnected(ok, label='') {
-    const dot = document.getElementById('dot');
-    const lbl = document.getElementById('conn-label');
-    dot.className = 'dot ' + (ok ? 'connected' : 'error');
-    lbl.textContent = ok ? 'Conectado' : (label || 'Desconectado');
-  }
+function formatDate(d) {
+  if (!d) return '';
+  const dt = new Date(d);
+  return `${dt.getDate()}/${dt.getMonth()+1} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+}
 
-  function setSemaphore(command, data) {
-    const lights = ['red','yellow','green','white'];
-    lights.forEach(l => {
-      document.getElementById('light-'+l).className = `light ${l}`;
-    });
+async function poll() {
+  try {
+    const res = await fetch(`${BACKEND}/events`);
+    const data = await res.json();
+    const events = data.events || [];
 
-    const card = document.getElementById('sem-card');
-    const status = document.getElementById('sem-status');
-    const meta = document.getElementById('sem-meta');
-    const banner = document.getElementById('emergency-banner');
+    // Status dot
+    document.getElementById('statusDot').className = 'status-dot';
+    document.getElementById('statusText').textContent = 'Conectado a NeonDB';
+    document.getElementById('statusText').style.color = '#00ff88';
 
-    if (command === 'white') {
-      document.getElementById('light-white').className = 'light white on';
-      status.className = 'semaphore-status white';
-      status.textContent = '⚡ LUZ BLANCA — EMERGENCIA';
-      card.className = 'semaphore-card emergency';
-      meta.innerHTML = `Nivel ${data.level || '?'} · Modo ${data.mode || '?'}<br>Evento: ${data.event_id || '?'}`;
-      banner.className = 'emergency-banner active';
-      document.getElementById('banner-event').textContent = `Evento: ${data.event_id || '?'} · Nivel ${data.level || '?'}`;
-      countWhite++;
-      document.getElementById('count-white').textContent = countWhite;
-      document.getElementById('last-level').textContent = data.level || '?';
-    } else if (command === 'normal') {
-      document.getElementById('light-green').className = 'light green on';
-      status.className = 'semaphore-status normal';
-      status.textContent = 'Ciclo Normal';
-      card.className = 'semaphore-card';
-      meta.innerHTML = `Semáforo restaurado<br>Evento: ${data.event_id || '?'}`;
-      banner.className = 'emergency-banner';
-      countNormal++;
-      document.getElementById('count-normal').textContent = countNormal;
+    // Stats
+    const active = events.filter(e => e.status === 'active');
+    const completed = events.filter(e => e.status === 'completed');
+    const durations = completed.filter(e => e.total_duration_seconds).map(e => e.total_duration_seconds);
+    const avgDur = durations.length ? Math.round(durations.reduce((a,b)=>a+b,0)/durations.length) : 0;
+
+    document.getElementById('statTotal').textContent = events.length;
+    document.getElementById('statActive').textContent = active.length;
+    document.getElementById('statCompleted').textContent = completed.length;
+    document.getElementById('statAvgDur').textContent = formatDuration(avgDur);
+
+    // Semáforos — solo el evento activo MÁS RECIENTE manda
+    const latestEvent = events[0];
+    const hasEmergency = latestEvent && latestEvent.status === 'active' && latestEvent.severity_level <= 2;
+    const emergencyEvent = hasEmergency ? latestEvent : null;
+    SEMAPHORES.forEach(id => setSemaphore(id, hasEmergency ? 'emergency' : 'normal'));
+
+    const banner = document.getElementById('emergencyBanner');
+    if (hasEmergency && emergencyEvent) {
+      banner.className = 'banner emergency';
+      banner.textContent = `🚨 EMERGENCIA ACTIVA — LUZ BLANCA PREVENTIVA · Nivel ${emergencyEvent.severity_level} · ${emergencyEvent.id}`;
+    } else {
+      banner.className = 'banner normal';
+      banner.textContent = '✅ Ciclo Normal — Sin emergencias activas';
     }
+
+    // Lista eventos
+    const list = document.getElementById('eventsList');
+    list.innerHTML = events.slice(0,10).map(e => `
+      <div class="event-item ${e.status}">
+        <div class="event-row">
+          <span class="event-id">${e.id}</span>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span class="level-badge level-${e.severity_level}">Nivel ${e.severity_level}</span>
+            <span class="event-badge ${e.status === 'active' ? 'badge-active' : 'badge-completed'}">
+              ${e.status === 'active' ? '🔴 Activo' : '✅ Completado'}
+            </span>
+          </div>
+        </div>
+        <div class="event-meta">
+          🚑 ${e.ambulance_id} &nbsp;·&nbsp; 🕐 ${formatDate(e.activated_at)}
+          ${e.total_duration_seconds ? `&nbsp;·&nbsp; ⏱ ${formatDuration(e.total_duration_seconds)}` : ''}
+        </div>
+      </div>
+    `).join('');
+
+  } catch(err) {
+    document.getElementById('statusDot').className = 'status-dot offline';
+    document.getElementById('statusText').textContent = 'Sin conexión';
+    document.getElementById('statusText').style.color = '#ff4444';
   }
+}
 
-  function connectMQTT() {
-    const ip = document.getElementById('broker-ip').value.trim();
-    document.getElementById('broker-label').textContent = `${ip}:9001`;
 
-    if (client) { try { client.end(); } catch(e){} }
-
-    addLog(`Conectando a ws://${ip}:9001...`, 'connected');
-
-    try {
-      client = mqtt.connect(`ws://${ip}:9001`, {
-        clientId: 'dynavia-dashboard-' + Math.random().toString(16).substr(2,8),
-        connectTimeout: 5000,
-        reconnectPeriod: 3000,
-      });
-
-      client.on('connect', () => {
-        setConnected(true);
-        addLog(`✅ Conectado a broker MQTT (${ip}:9001)`, 'connected');
-        client.subscribe('dynavia/semaphore/#', (err) => {
-          if (!err) addLog('📡 Suscrito a dynavia/semaphore/#', 'connected');
-        });
-      });
-
-      client.on('message', (topic, payload) => {
-        countMsgs++;
-        document.getElementById('count-msgs').textContent = countMsgs;
-
-        let data = {};
-        try { data = JSON.parse(payload.toString()); } catch(e) {}
-
-        const command = data.command || '';
-        const semId = data.semaphore_id || topic.split('/').pop();
-        document.getElementById('sem-id').textContent = semId === 'all' ? 'SEM-001' : semId;
-
-        addLog(`📨 [${topic}] → ${command.toUpperCase()}`, command);
-        setSemaphore(command, data);
-      });
-
-      client.on('error', (err) => {
-        setConnected(false, 'Error');
-        addLog(`❌ Error: ${err.message}`, '');
-      });
-
-      client.on('close', () => {
-        setConnected(false, 'Desconectado');
-        addLog('🔌 Conexión cerrada', '');
-      });
-
-    } catch(e) {
-      addLog(`❌ ${e.message}`, '');
-    }
-  }
-
-  // Auto-conectar al cargar
-  window.onload = () => connectMQTT();
+buildSemaphores();
+poll();
+setInterval(poll, POLL_INTERVAL);
 </script>
 </body>
 </html>
