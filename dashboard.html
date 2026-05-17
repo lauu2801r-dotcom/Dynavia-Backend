@@ -8,7 +8,7 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #0a0a0f; color: #fff; font-family: 'Segoe UI', sans-serif; min-height: 100vh; }
   .header { background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 20px 40px; display: flex; align-items: center; gap: 16px; border-bottom: 1px solid #ffffff15; }
-  .logo { font-size: 24px; font-weight: 800; background: linear-gradient(90deg, #00d4ff, #0099ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .logo { font-size: 24px; font-weight: 800; background: linear-gradient(90deg, #00d4ff, #0099ff); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
   .status-dot { width: 10px; height: 10px; border-radius: 50%; background: #00ff88; box-shadow: 0 0 8px #00ff88; animation: pulse 2s infinite; margin-left: auto; }
   .status-dot.offline { background: #ff4444; box-shadow: 0 0 8px #ff4444; animation: none; }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
