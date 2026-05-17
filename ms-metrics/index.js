@@ -55,7 +55,58 @@ app.post('/metrics', async (req, res) => {
   }
 });
 
-// RF-13: Obtener métricas de un evento
+// RF-13: Obtener métricas de un evento específico
+app.get('/metrics/shift', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT e.id, e.severity_level, e.status,
+              e.activated_at, e.deactivated_at,
+              e.total_duration_seconds,
+              m.vehicles_notified, m.semaphores_activated
+       FROM emergency_events e
+       LEFT JOIN event_metrics m ON e.id = m.event_id
+       WHERE e.status = 'completed'
+       ORDER BY e.activated_at DESC
+       LIMIT 20`
+    );
+
+    const events = result.rows;
+    const total = events.length;
+
+    if (total === 0) {
+      return res.json({
+        total_events: 0,
+        avg_duration_seconds: 0,
+        avg_saved_seconds: 0,
+        saving_percent: 0,
+        events: []
+      });
+    }
+
+    const avgDuration = Math.floor(
+      events.reduce((sum, e) => sum + (e.total_duration_seconds || 0), 0) / total
+    );
+
+    // Estimado sin sistema: 30% más lento
+    const avgWithout = Math.floor(avgDuration * 1.30);
+    const avgSaved = avgWithout - avgDuration;
+    const savingPercent = ((avgSaved / avgWithout) * 100).toFixed(1);
+
+    res.json({
+      total_events: total,
+      avg_duration_seconds: avgDuration,
+      avg_saved_seconds: avgSaved,
+      saving_percent: parseFloat(savingPercent),
+      events
+    });
+
+  } catch (err) {
+    console.error('Error metrics/shift:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// RF-13: Obtener métricas de un evento específico por ID
 app.get('/metrics/:event_id', async (req, res) => {
   try {
     const result = await pool.query(

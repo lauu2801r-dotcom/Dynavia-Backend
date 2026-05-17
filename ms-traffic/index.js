@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
+const mqtt = require('mqtt');
 require('dotenv').config();
 
 const app = express();
@@ -18,11 +19,22 @@ pool.connect((err) => {
   else console.log('✅ ms-traffic conectado a Neon');
 });
 
+// Conexión MQTT Mosquitto
+const mqttClient = mqtt.connect(process.env.MQTT_BROKER || 'mqtt://broker.emqx.io:1883');
+
+mqttClient.on('connect', () => {
+  console.log('✅ ms-traffic conectado a Mosquitto MQTT');
+});
+
+mqttClient.on('error', (err) => {
+  console.error('❌ Error MQTT:', err.message);
+});
+
 // RF-09: Qué nivel activa semáforos
 function semaphoreMode(level) {
   if (level === 1) return 'full';
   if (level === 2) return 'partial';
-  return 'none'; // nivel 3 no activa semáforos
+  return 'none';
 }
 
 // RF-10: Activar semáforos en la ruta
@@ -59,8 +71,28 @@ app.post('/semaphore/activate', async (req, res) => {
          s.location?.lng || null, mode, level]
       );
       activated.push(s.semaphore_id);
-      console.log(`🚦 Semáforo ${s.semaphore_id} → luz blanca [Nivel ${level} / ${mode}]`);
+
+      // ✅ Publicar señal MQTT al semáforo Arduino
+      const topic = `dynavia/semaphore/${s.semaphore_id}`;
+      const payload = JSON.stringify({
+        semaphore_id: s.semaphore_id,
+        command: 'white',
+        mode,
+        level,
+        event_id
+      });
+      mqttClient.publish(topic, payload, { qos: 1 });
+      console.log(`🚦 MQTT → ${topic}: luz blanca [Nivel ${level}]`);
     }
+
+    // Publicar también en topic general para Wokwi
+    mqttClient.publish('dynavia/semaphore/all', JSON.stringify({
+      command: 'white',
+      mode,
+      level,
+      event_id,
+      semaphores: activated
+    }), { qos: 1 });
 
     res.json({
       status: 'activated',
@@ -77,7 +109,7 @@ app.post('/semaphore/activate', async (req, res) => {
   }
 });
 
-// RF-11: Restablecer todos los semáforos al finalizar el trayecto
+// RF-11: Restablecer todos los semáforos al finalizar
 app.post('/semaphore/restore', async (req, res) => {
   const { event_id } = req.body;
 
@@ -93,7 +125,22 @@ app.post('/semaphore/restore', async (req, res) => {
     );
 
     const restored = result.rows.map(r => r.semaphore_id);
-    console.log(`✅ ${restored.length} semáforos restablecidos [${event_id}]`);
+
+    // ✅ Publicar restauración por MQTT
+    mqttClient.publish('dynavia/semaphore/all', JSON.stringify({
+      command: 'normal',
+      event_id,
+      semaphores: restored
+    }), { qos: 1 });
+
+    for (const semaphore_id of restored) {
+      mqttClient.publish(`dynavia/semaphore/${semaphore_id}`, JSON.stringify({
+        semaphore_id,
+        command: 'normal',
+        event_id
+      }), { qos: 1 });
+      console.log(`✅ MQTT → semáforo ${semaphore_id} restaurado`);
+    }
 
     res.json({
       status: 'restored',
@@ -127,7 +174,7 @@ app.get('/semaphore/:event_id', async (req, res) => {
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', service: 'ms-traffic', db: 'neon' });
+  res.json({ status: 'ok', service: 'ms-traffic', db: 'neon', mqtt: mqttClient.connected });
 });
 
 const PORT = process.env.PORT || 3005;
