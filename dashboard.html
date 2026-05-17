@@ -4,108 +4,430 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dynavia — Dashboard IoT Semáforos</title>
+<link href="https://fonts.googleapis.com/css2?family=Atma:wght@500&family=Acme&family=Gabriela&display=swap" rel="stylesheet">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: #0a0a0f; color: #fff; font-family: 'Segoe UI', sans-serif; min-height: 100vh; }
-  .header { background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 20px 40px; display: flex; align-items: center; gap: 16px; border-bottom: 1px solid #ffffff15; }
-  .logo { font-size: 24px; font-weight: 800; background: linear-gradient(90deg, #00d4ff, #0099ff); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
-  .status-dot { width: 10px; height: 10px; border-radius: 50%; background: #00ff88; box-shadow: 0 0 8px #00ff88; animation: pulse 2s infinite; margin-left: auto; }
-  .status-dot.offline { background: #ff4444; box-shadow: 0 0 8px #ff4444; animation: none; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-  .main { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 32px 40px; max-width: 1200px; margin: 0 auto; }
-  .card { background: #12122a; border-radius: 20px; padding: 28px; border: 1px solid #ffffff10; }
-  .card-title { font-size: 12px; text-transform: uppercase; letter-spacing: 2px; color: #888; margin-bottom: 20px; }
-  .semaphore-container { display: flex; justify-content: center; gap: 40px; margin: 20px 0; }
-  .semaphore { background: #1a1a1a; border-radius: 16px; padding: 20px 16px; display: flex; flex-direction: column; gap: 14px; align-items: center; border: 2px solid #333; width: 80px; }
-  .semaphore-id { font-size: 10px; color: #666; margin-top: 4px; }
-  .light { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #333; transition: all 0.5s ease; }
-  .light.red { background: #1a0000; }
-  .light.red.on { background: #ff2200; box-shadow: 0 0 20px #ff2200, 0 0 40px #ff220055; border-color: #ff2200; }
-  .light.yellow { background: #1a1400; }
-  .light.yellow.on { background: #ffcc00; box-shadow: 0 0 20px #ffcc00, 0 0 40px #ffcc0055; border-color: #ffcc00; }
-  .light.green { background: #001a00; }
-  .light.green.on { background: #00ff44; box-shadow: 0 0 20px #00ff44, 0 0 40px #00ff4455; border-color: #00ff44; }
-  .light.white { background: #0a0a0a; }
-  .light.white.on { background: #ffffff; box-shadow: 0 0 20px #ffffff, 0 0 40px #ffffff88; border-color: #ffffff; }
-  .banner { padding: 16px 24px; border-radius: 12px; text-align: center; margin-top: 16px; font-weight: 700; font-size: 14px; transition: all 0.5s; }
-  .banner.emergency { background: linear-gradient(135deg, #ff220022, #ff220044); border: 1px solid #ff2200; color: #ff6644; }
-  .banner.normal { background: linear-gradient(135deg, #00ff4422, #00ff4444); border: 1px solid #00ff44; color: #00ff44; }
-  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .stat { background: #0a0a1a; border-radius: 12px; padding: 16px; text-align: center; border: 1px solid #ffffff08; }
-  .stat-value { font-size: 32px; font-weight: 800; color: #00d4ff; }
-  .stat-label { font-size: 11px; color: #666; margin-top: 4px; }
-  .events-list { max-height: 320px; overflow-y: auto; }
-  .event-item { padding: 12px 16px; border-radius: 10px; margin-bottom: 8px; border-left: 3px solid; background: #0a0a1a; }
-  .event-item.active { border-color: #ff2200; }
-  .event-item.completed { border-color: #00ff44; }
-  .event-row { display: flex; justify-content: space-between; align-items: center; }
-  .event-id { font-size: 11px; color: #aaa; font-family: monospace; }
-  .event-badge { font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 700; }
-  .badge-active { background: #ff220022; color: #ff6644; border: 1px solid #ff2200; }
-  .badge-completed { background: #00ff4422; color: #00ff44; border: 1px solid #00ff44; }
-  .event-meta { font-size: 11px; color: #666; margin-top: 4px; }
+
+  body {
+    background: #f0f4ff;
+    font-family: 'Gabriela', serif;
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  .header {
+    background: #fff;
+    border-bottom: 1.5px solid #dde3f5;
+    padding: 16px 40px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    font-family: 'Atma', cursive;
+    font-weight: 500;
+    font-size: 26px;
+    color: #2d4de0;
+    letter-spacing: 1px;
+  }
+
+  .header-tagline {
+    font-family: 'Acme', sans-serif;
+    font-size: 12px;
+    color: #8892b0;
+    letter-spacing: 0.4px;
+  }
+
+  .live-pill {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: #edfaf3;
+    border: 1.5px solid #a7eeca;
+    border-radius: 99px;
+    padding: 5px 14px;
+  }
+
+  .live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #1db969;
+    animation: livepulse 2s infinite;
+  }
+
+  .live-dot.offline { background: #e53e3e; animation: none; }
+
+  @keyframes livepulse { 0%,100%{opacity:1} 50%{opacity:0.25} }
+
+  .live-label {
+    font-family: 'Acme', sans-serif;
+    font-size: 11px;
+    color: #1a9952;
+  }
+
+  /* MAIN LAYOUT */
+  .main {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    padding: 28px 40px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
   .col-span { grid-column: span 2; }
-  .level-badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
-  .level-1 { background: #ff220022; color: #ff6644; border: 1px solid #ff2200; }
-  .level-2 { background: #ffaa0022; color: #ffcc44; border: 1px solid #ffaa00; }
-  .level-3 { background: #0088ff22; color: #44aaff; border: 1px solid #0088ff; }
+
+  /* CARDS */
+  .card {
+    background: #fff;
+    border-radius: 18px;
+    border: 1.5px solid #dde3f5;
+    padding: 24px 22px;
+  }
+
+  .card-title {
+    font-family: 'Atma', cursive;
+    font-weight: 500;
+    font-size: 17px;
+    color: #1e2a6e;
+    margin-bottom: 3px;
+  }
+
+  .card-sub {
+    font-family: 'Acme', sans-serif;
+    font-size: 11px;
+    color: #8892b0;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 20px;
+  }
+
+  /* SEMÁFOROS */
+  .semaphore-container {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-end;
+    padding: 8px 0 14px;
+  }
+
+  .sem-unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+
+  .sem-visor {
+    width: 58px;
+    height: 8px;
+    background: #374151;
+    border-radius: 5px 5px 0 0;
+    border: 1.5px solid #1f2937;
+    border-bottom: none;
+  }
+
+  .sem-body {
+    width: 56px;
+    background: #374151;
+    border-radius: 0 0 14px 14px;
+    border: 1.5px solid #1f2937;
+    border-top: none;
+    padding: 10px 9px 13px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    align-items: center;
+  }
+
+  .sem-hood {
+    width: 40px;
+    height: 5px;
+    background: #1f2937;
+    border-radius: 2px 2px 0 0;
+    margin-top: 5px;
+  }
+
+  .light {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 2px solid #111827;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+
+  .light::after {
+    content: '';
+    position: absolute;
+    top: 5px;
+    left: 6px;
+    width: 9px;
+    height: 6px;
+    background: rgba(255,255,255,0.18);
+    border-radius: 50%;
+    transform: rotate(-30deg);
+  }
+
+  /* Focos apagados */
+  .light.red    { background: radial-gradient(circle at 40% 36%, #3d0c04, #1a0200); }
+  .light.yellow { background: radial-gradient(circle at 40% 36%, #3a2800, #1a1000); }
+  .light.green  { background: radial-gradient(circle at 40% 36%, #082e10, #031008); }
+  .light.white  { background: radial-gradient(circle at 40% 36%, #141428, #08080f); }
+
+  /* Focos encendidos */
+  .light.red.on {
+    background: radial-gradient(circle at 38% 34%, #ffaa88, #ff2200);
+    border-color: #ff3300;
+    box-shadow: 0 0 10px #ff220055, 0 0 20px #ff220022;
+    animation: glR 2.5s ease-in-out infinite;
+  }
+  .light.yellow.on {
+    background: radial-gradient(circle at 38% 34%, #ffee88, #ffaa00);
+    border-color: #ff9900;
+    box-shadow: 0 0 10px #ffaa0055, 0 0 20px #ffaa0022;
+    animation: glY 2s ease-in-out infinite;
+  }
+  .light.green.on {
+    background: radial-gradient(circle at 38% 34%, #99ffbb, #11cc44);
+    border-color: #00bb33;
+    box-shadow: 0 0 10px #11cc4455, 0 0 20px #11cc4422;
+  }
+  .light.white.on {
+    background: radial-gradient(circle at 38% 34%, #ffffff, #c8daff);
+    border-color: #7799ee;
+    box-shadow: 0 0 12px #aabbff55, 0 0 24px #aabbff22;
+    animation: glW 3s ease-in-out infinite;
+  }
+
+  @keyframes glR {
+    0%,100%{box-shadow:0 0 10px #ff220055,0 0 20px #ff220022}
+    50%{box-shadow:0 0 16px #ff220088,0 0 30px #ff220033}
+  }
+  @keyframes glY {
+    0%,100%{box-shadow:0 0 10px #ffaa0055,0 0 20px #ffaa0022}
+    50%{box-shadow:0 0 18px #ffaa0088,0 0 32px #ffaa0033}
+  }
+  @keyframes glW {
+    0%,100%{box-shadow:0 0 12px #aabbff55,0 0 24px #aabbff22}
+    50%{box-shadow:0 0 20px #aabbffaa,0 0 38px #aabbff44}
+  }
+
+  .sem-arm  { width: 40px; height: 6px; background: #6b7280; border-radius: 2px; }
+  .sem-pole { width: 8px; height: 40px; background: #9ca3af; border-radius: 2px; }
+  .sem-base { width: 22px; height: 6px; background: #6b7280; border-radius: 0 0 4px 4px; }
+
+  .semaphore-id {
+    font-family: 'Acme', sans-serif;
+    font-size: 10px;
+    color: #6b7280;
+    margin-top: 5px;
+    letter-spacing: 1px;
+  }
+
+  /* BANNER */
+  .banner {
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-family: 'Gabriela', serif;
+    font-size: 12.5px;
+    text-align: center;
+    border: 1.5px solid;
+    transition: all 0.4s;
+  }
+  .banner.normal    { background: #edfaf3; border-color: #a7eeca; color: #166534; }
+  .banner.emergency { background: #fff7ed; border-color: #fdba74; color: #9a3412; }
+
+  /* STATS */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .stat {
+    background: #f0f4ff;
+    border-radius: 14px;
+    border: 1.5px solid #dde3f5;
+    padding: 16px 12px;
+    text-align: center;
+  }
+
+  .stat-value {
+    font-family: 'Atma', cursive;
+    font-weight: 500;
+    font-size: 34px;
+    line-height: 1;
+    color: #2d4de0;
+  }
+  .stat-value.danger { color: #dc2626; }
+  .stat-value.ok     { color: #16a34a; }
+  .stat-value.warm   { color: #d97706; }
+
+  .stat-label {
+    font-family: 'Acme', sans-serif;
+    font-size: 11px;
+    color: #8892b0;
+    margin-top: 5px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* EVENTOS */
+  .events-list {
+    max-height: 320px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    scrollbar-width: thin;
+    scrollbar-color: #dde3f5 transparent;
+  }
+
+  .event-item {
+    border-radius: 12px;
+    padding: 13px 15px;
+    border: 1.5px solid #e5e7eb;
+    border-left-width: 4px;
+    border-left-style: solid;
+    background: #fafbff;
+    transition: transform 0.15s;
+  }
+  .event-item:hover { transform: translateX(4px); }
+  .event-item.active    { border-left-color: #ef4444; background: #fff8f8; }
+  .event-item.completed { border-left-color: #22c55e; background: #f7fef9; }
+
+  .event-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .event-id {
+    font-family: 'Atma', cursive;
+    font-weight: 500;
+    font-size: 13px;
+    color: #1e2a6e;
+  }
+
+  .ev-badges { display: flex; gap: 6px; align-items: center; }
+
+  .event-badge {
+    font-family: 'Acme', sans-serif;
+    font-size: 10px;
+    padding: 3px 9px;
+    border-radius: 99px;
+    border: 1px solid;
+  }
+  .badge-active    { background: #fef2f2; color: #991b1b; border-color: #fca5a5; }
+  .badge-completed { background: #f0fdf4; color: #166534; border-color: #86efac; }
+
+  .level-badge {
+    font-family: 'Acme', sans-serif;
+    font-size: 10px;
+    padding: 3px 9px;
+    border-radius: 99px;
+    border: 1px solid;
+  }
+  .level-1 { background: #fef2f2; color: #991b1b; border-color: #fca5a5; }
+  .level-2 { background: #fffbeb; color: #92400e; border-color: #fcd34d; }
+  .level-3 { background: #eff6ff; color: #1e40af; border-color: #93c5fd; }
+
+  .event-meta {
+    font-family: 'Gabriela', serif;
+    font-size: 11px;
+    color: #9ca3af;
+    margin-top: 5px;
+  }
 </style>
 </head>
 <body>
+
 <div class="header">
-  <div class="logo">⚡ DYNAVIA</div>
-  <span style="color:#666;font-size:13px">Dashboard IoT — Semáforos en tiempo real</span>
-  <div class="status-dot" id="statusDot"></div>
-  <span id="statusText" style="font-size:12px;color:#00ff88;margin-left:8px">Conectado</span>
+  <div class="logo">⚡ Dynavia</div>
+  <span class="header-tagline">Dashboard IoT — semáforos en tiempo real</span>
+  <div class="live-pill">
+    <div class="live-dot" id="statusDot"></div>
+    <span class="live-label" id="statusText">Conectado a NeonDB</span>
+  </div>
 </div>
 
 <div class="main">
+
   <!-- Semáforos -->
   <div class="card">
-    <div class="card-title">🚦 Estado Semáforos</div>
-    <div class="semaphore-container" id="semaphoreContainer">
-      <!-- generado por JS -->
-    </div>
-    <div class="banner normal" id="emergencyBanner">✅ Ciclo Normal — Sin emergencias activas</div>
+    <div class="card-title">Estado de semáforos</div>
+    <div class="card-sub">Red activa</div>
+    <div class="semaphore-container" id="semaphoreContainer"></div>
+    <div class="banner normal" id="emergencyBanner">Sin emergencias activas — ciclo normal</div>
   </div>
 
-  <!-- Stats -->
+  <!-- Métricas -->
   <div class="card">
-    <div class="card-title">📊 Métricas del Sistema</div>
+    <div class="card-title">Métricas del sistema</div>
+    <div class="card-sub">Tiempo real</div>
     <div class="stats-grid">
-      <div class="stat"><div class="stat-value" id="statTotal">0</div><div class="stat-label">Total Eventos</div></div>
-      <div class="stat"><div class="stat-value" id="statActive" style="color:#ff6644">0</div><div class="stat-label">Activos Ahora</div></div>
-      <div class="stat"><div class="stat-value" id="statCompleted" style="color:#00ff44">0</div><div class="stat-label">Completados</div></div>
-      <div class="stat"><div class="stat-value" id="statAvgDur" style="color:#ffcc00">0s</div><div class="stat-label">Duración Promedio</div></div>
+      <div class="stat">
+        <div class="stat-value" id="statTotal">0</div>
+        <div class="stat-label">Total eventos</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value danger" id="statActive">0</div>
+        <div class="stat-label">Activos</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value ok" id="statCompleted">0</div>
+        <div class="stat-label">Completados</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value warm" id="statAvgDur">—</div>
+        <div class="stat-label">Dur. promedio</div>
+      </div>
     </div>
   </div>
 
   <!-- Historial -->
   <div class="card col-span">
-    <div class="card-title">📋 Eventos Recientes — Base de Datos NeonDB</div>
+    <div class="card-title">Eventos recientes</div>
+    <div class="card-sub">Base de datos NeonDB</div>
     <div class="events-list" id="eventsList">
-      <div style="color:#666;text-align:center;padding:40px">Cargando eventos...</div>
+      <div style="color:#9ca3af;text-align:center;padding:32px;font-family:'Gabriela',serif">Cargando eventos...</div>
     </div>
   </div>
+
 </div>
 
 <script>
 const BACKEND = 'http://192.168.56.101:3004';
 const SEMAPHORES = ['SEM-001', 'SEM-002', 'SEM-003'];
-let semaphoreState = {}; // 'normal' | 'emergency'
+let semaphoreState = {};
 const POLL_INTERVAL = 2000;
 
-// Construir semáforos
 function buildSemaphores() {
   const container = document.getElementById('semaphoreContainer');
   container.innerHTML = SEMAPHORES.map(id => `
-    <div style="text-align:center">
-      <div class="semaphore" id="sem-${id}">
+    <div class="sem-unit">
+      <div class="sem-visor"></div>
+      <div class="sem-body" id="sem-${id}">
+        <div class="sem-hood"></div>
         <div class="light red" id="${id}-red"></div>
+        <div class="sem-hood"></div>
         <div class="light yellow" id="${id}-yellow"></div>
+        <div class="sem-hood"></div>
         <div class="light green on" id="${id}-green"></div>
+        <div class="sem-hood"></div>
         <div class="light white" id="${id}-white"></div>
       </div>
+      <div class="sem-arm"></div>
+      <div class="sem-pole"></div>
+      <div class="sem-base"></div>
       <div class="semaphore-id">${id}</div>
     </div>
   `).join('');
@@ -113,8 +435,9 @@ function buildSemaphores() {
 }
 
 function setSemaphore(id, mode) {
-  const lights = ['red','yellow','green','white'];
-  lights.forEach(l => document.getElementById(`${id}-${l}`)?.classList.remove('on'));
+  ['red','yellow','green','white'].forEach(l =>
+    document.getElementById(`${id}-${l}`)?.classList.remove('on')
+  );
   if (mode === 'emergency') {
     document.getElementById(`${id}-white`)?.classList.add('on');
   } else {
@@ -140,12 +463,10 @@ async function poll() {
     const data = await res.json();
     const events = data.events || [];
 
-    // Status dot
-    document.getElementById('statusDot').className = 'status-dot';
+    document.getElementById('statusDot').className = 'live-dot';
     document.getElementById('statusText').textContent = 'Conectado a NeonDB';
-    document.getElementById('statusText').style.color = '#00ff88';
+    document.getElementById('statusText').style.color = '#1a9952';
 
-    // Stats
     const active = events.filter(e => e.status === 'active');
     const completed = events.filter(e => e.status === 'completed');
     const durations = completed.filter(e => e.total_duration_seconds).map(e => e.total_duration_seconds);
@@ -156,7 +477,6 @@ async function poll() {
     document.getElementById('statCompleted').textContent = completed.length;
     document.getElementById('statAvgDur').textContent = formatDuration(avgDur);
 
-    // Semáforos — solo el evento activo MÁS RECIENTE manda
     const latestEvent = events[0];
     const hasEmergency = latestEvent && latestEvent.status === 'active' && latestEvent.severity_level <= 2;
     const emergencyEvent = hasEmergency ? latestEvent : null;
@@ -165,19 +485,17 @@ async function poll() {
     const banner = document.getElementById('emergencyBanner');
     if (hasEmergency && emergencyEvent) {
       banner.className = 'banner emergency';
-      banner.textContent = `🚨 EMERGENCIA ACTIVA — LUZ BLANCA PREVENTIVA · Nivel ${emergencyEvent.severity_level} · ${emergencyEvent.id}`;
+      banner.textContent = `EMERGENCIA ACTIVA — luz blanca preventiva · Nivel ${emergencyEvent.severity_level} · ${emergencyEvent.id}`;
     } else {
       banner.className = 'banner normal';
-      banner.textContent = '✅ Ciclo Normal — Sin emergencias activas';
+      banner.textContent = 'Sin emergencias activas — ciclo normal';
     }
 
-    // Lista eventos
-    const list = document.getElementById('eventsList');
-    list.innerHTML = events.slice(0,10).map(e => `
+    document.getElementById('eventsList').innerHTML = events.slice(0,10).map(e => `
       <div class="event-item ${e.status}">
         <div class="event-row">
           <span class="event-id">${e.id}</span>
-          <div style="display:flex;gap:8px;align-items:center">
+          <div class="ev-badges">
             <span class="level-badge level-${e.severity_level}">Nivel ${e.severity_level}</span>
             <span class="event-badge ${e.status === 'active' ? 'badge-active' : 'badge-completed'}">
               ${e.status === 'active' ? '🔴 Activo' : '✅ Completado'}
@@ -192,12 +510,11 @@ async function poll() {
     `).join('');
 
   } catch(err) {
-    document.getElementById('statusDot').className = 'status-dot offline';
+    document.getElementById('statusDot').className = 'live-dot offline';
     document.getElementById('statusText').textContent = 'Sin conexión';
-    document.getElementById('statusText').style.color = '#ff4444';
+    document.getElementById('statusText').style.color = '#dc2626';
   }
 }
-
 
 buildSemaphores();
 poll();
