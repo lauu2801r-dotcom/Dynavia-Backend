@@ -20,7 +20,7 @@ pool.connect((err) => {
 });
 
 // Conexión MQTT Mosquitto
-const mqttClient = mqtt.connect(process.env.MQTT_BROKER || 'mqtt://broker.emqx.io:1883');
+const mqttClient = mqtt.connect(process.env.MQTT_BROKER || 'mqtt://mosquitto:1883');
 
 mqttClient.on('connect', () => {
   console.log('✅ ms-traffic conectado a Mosquitto MQTT');

@@ -47,7 +47,7 @@ services:
     environment:
       - PORT=3005
       - DATABASE_URL=${DATABASE_URL}
-      - MQTT_BROKER=mqtt://broker.emqx.io:1883
+      - MQTT_BROKER=mqtt://mosquitto:1883
     restart: always
     depends_on:
       - mosquitto
